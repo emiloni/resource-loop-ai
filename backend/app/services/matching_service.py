@@ -3,15 +3,12 @@
 from typing import Dict, Any, List, Tuple
 import re
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.models.resource import Resource
 from app.models.department import Department
 
-
-# ============================================================
-# MATCHING WEIGHTS
-# ============================================================
 
 DEFAULT_WEIGHTS = {
     "technical_compatibility": 0.40,
@@ -24,32 +21,11 @@ DEFAULT_WEIGHTS = {
 
 
 # ============================================================
-# NATURAL LANGUAGE REQUIREMENT PARSER
+# 1. NATURAL LANGUAGE REQUIREMENT PARSER
 # ============================================================
 
-def parse_natural_language_requirements(
-    text: str,
-) -> Dict[str, Any]:
-    """
-    Convert a natural-language resource request into
-    structured requirements.
-
-    Examples:
-
-        "computer"
-        -> Computer / Computer
-
-        "laptop"
-        -> Computer / Laptop
-
-        "desktop computer"
-        -> Computer / Desktop Computer
-
-        "I need 5 laptops with 16GB RAM"
-        -> Computer / Laptop
-        -> quantity = 5
-        -> RAM >= 16GB
-    """
+def parse_natural_language_requirements(text: str) -> Dict[str, Any]:
+    """Convert a natural-language request into structured requirements."""
 
     text = text or ""
     text_lower = text.lower().strip()
@@ -62,55 +38,46 @@ def parse_natural_language_requirements(
         "raw_query": text,
     }
 
-    # --------------------------------------------------------
-    # CATEGORY / TYPE DETECTION
-    # --------------------------------------------------------
-
     # IMPORTANT:
-    # More specific terms must appear BEFORE generic terms.
-    # Otherwise "desktop computer" could match "computer" first.
-
+    # Specific terms must come before generic terms.
     category_keywords = [
-        # Computers
         ("laptop", "Computer", "Laptop"),
         ("notebook", "Computer", "Laptop"),
+
         ("desktop computer", "Computer", "Desktop Computer"),
         ("desktop pc", "Computer", "Desktop Computer"),
         ("desktop", "Computer", "Desktop Computer"),
+
         ("computer", "Computer", "Computer"),
         ("computers", "Computer", "Computer"),
 
-        # Electronics
         ("monitor", "Electronics", "Monitor"),
         ("display", "Electronics", "Monitor"),
+
         ("projector", "Electronics", "Projector"),
         ("printer", "Electronics", "Printer"),
         ("scanner", "Electronics", "Scanner"),
+
+        ("router", "Networking", "Router"),
         ("server", "Electronics", "Server"),
 
-        # Networking
-        ("router", "Networking", "Router"),
-        ("switch", "Networking", "Switch"),
-
-        # Furniture
         ("office chair", "Furniture", "Office Chair"),
         ("visitor chair", "Furniture", "Visitor Chair"),
         ("chair", "Furniture", "Chair"),
+
         ("study desk", "Furniture", "Study Desk"),
         ("work desk", "Furniture", "Desk"),
         ("desk", "Furniture", "Desk"),
-        ("table", "Furniture", "Table"),
     ]
 
     for keyword, category, resource_type in category_keywords:
-
         if keyword in text_lower:
             result["category"] = category
             result["type"] = resource_type
             break
 
     # --------------------------------------------------------
-    # QUANTITY
+    # Quantity
     # --------------------------------------------------------
 
     quantity_patterns = [
@@ -122,20 +89,14 @@ def parse_natural_language_requirements(
     ]
 
     for pattern in quantity_patterns:
-
-        match = re.search(
-            pattern,
-            text_lower,
-        )
+        match = re.search(pattern, text_lower)
 
         if match:
-            result["quantity"] = int(
-                match.group(1)
-            )
+            result["quantity"] = int(match.group(1))
             break
 
     # --------------------------------------------------------
-    # TECHNICAL SPECIFICATIONS
+    # Specifications
     # --------------------------------------------------------
 
     specs = {}
@@ -143,29 +104,22 @@ def parse_natural_language_requirements(
     # RAM
     ram_match = re.search(
         r"(\d+)\s*gb\s*(?:of\s*)?ram",
-        text_lower,
+        text_lower
     )
 
     if ram_match:
-
         specs["ram_gb"] = {
-            "minimum": int(
-                ram_match.group(1)
-            )
+            "minimum": int(ram_match.group(1))
         }
 
     # Storage
     storage_match = re.search(
         r"(\d+(?:\.\d+)?)\s*(gb|tb)\s*(?:ssd|hdd|storage)",
-        text_lower,
+        text_lower
     )
 
     if storage_match:
-
-        value = float(
-            storage_match.group(1)
-        )
-
+        value = float(storage_match.group(1))
         unit = storage_match.group(2).lower()
 
         if unit == "tb":
@@ -193,13 +147,10 @@ def parse_natural_language_requirements(
     ]
 
     for cpu in cpu_options:
-
         if cpu in text_lower:
-
             specs["cpu"] = {
                 "minimum": cpu
             }
-
             break
 
     # GPU
@@ -213,13 +164,10 @@ def parse_natural_language_requirements(
     ]
 
     for gpu_keyword in gpu_keywords:
-
         if gpu_keyword in text_lower:
-
             specs["gpu"] = {
                 "required": True
             }
-
             break
 
     result["specifications"] = specs
@@ -228,18 +176,17 @@ def parse_natural_language_requirements(
 
 
 # ============================================================
-# NORMALIZATION HELPERS
+# 2. NORMALIZATION
 # ============================================================
 
 def _normalize(value: Any) -> str:
+    """Normalize database/user values for comparisons."""
 
-    return str(
-        value or ""
-    ).strip().lower()
+    return str(value or "").strip().lower()
 
 
 # ============================================================
-# RESOURCE TYPE MATCHING
+# 3. RESOURCE TYPE MATCHING
 # ============================================================
 
 def _resource_matches_requested_type(
@@ -247,80 +194,33 @@ def _resource_matches_requested_type(
     requested_category: str,
     requested_type: str,
 ) -> bool:
-    """
-    Flexible category/type matching.
+    """Determine whether a resource matches the requested category/type."""
 
-    This intentionally does NOT require an exact database
-    category/type combination.
+    db_category = _normalize(resource.category)
+    db_type = _normalize(resource.type)
+    db_name = _normalize(resource.name)
 
-    Example:
-
-        Requested:
-            category = Computer
-            type = Computer
-
-        Database:
-            category = Computer
-            type = Laptop
-
-        Result:
-            MATCH
-    """
-
-    db_category = _normalize(
-        resource.category
-    )
-
-    db_type = _normalize(
-        resource.type
-    )
-
-    db_name = _normalize(
-        resource.name
-    )
-
-    # No category/type requirement
-    if (
-        not requested_category
-        and not requested_type
-    ):
+    if not requested_category and not requested_type:
         return True
 
     # Exact type match
-    if (
-        requested_type
-        and requested_type == db_type
-    ):
+    if requested_type and requested_type == db_type:
         return True
 
-    # --------------------------------------------------------
-    # LAPTOP
-    # --------------------------------------------------------
-
-    if requested_type in {
-        "laptop",
-        "notebook",
-    }:
-
+    # Laptop
+    if requested_type in {"laptop", "notebook"}:
         return (
-            db_type in {
-                "laptop",
-                "notebook",
-            }
+            db_type in {"laptop", "notebook"}
             or "laptop" in db_name
             or "notebook" in db_name
         )
 
-    # --------------------------------------------------------
-    # DESKTOP
-    # --------------------------------------------------------
-
+    # Desktop
     if requested_type in {
         "desktop",
         "desktop computer",
         "desktop pc",
     }:
-
         return (
             db_type in {
                 "desktop",
@@ -331,15 +231,11 @@ def _resource_matches_requested_type(
             or "desktop" in db_name
         )
 
-    # --------------------------------------------------------
-    # GENERIC COMPUTER
-    # --------------------------------------------------------
-
+    # Generic computer
     if requested_type in {
         "computer",
         "computers",
     }:
-
         return (
             db_category == "computer"
             or db_type in {
@@ -356,106 +252,72 @@ def _resource_matches_requested_type(
             or "desktop" in db_name
         )
 
-    # --------------------------------------------------------
-    # MONITOR
-    # --------------------------------------------------------
-
+    # Monitor
     if requested_type in {
         "monitor",
         "display",
     }:
-
         return (
-            db_type in {
-                "monitor",
-                "display",
-            }
+            db_type in {"monitor", "display"}
             or "monitor" in db_name
             or "display" in db_name
         )
 
-    # --------------------------------------------------------
-    # CHAIRS
-    # --------------------------------------------------------
-
+    # Chair
     if requested_type in {
         "chair",
         "office chair",
         "visitor chair",
     }:
-
         return (
             "chair" in db_type
             or "chair" in db_name
         )
 
-    # --------------------------------------------------------
-    # DESKS
-    # --------------------------------------------------------
-
+    # Desk
     if requested_type in {
         "desk",
         "study desk",
         "work desk",
     }:
-
         return (
             "desk" in db_type
             or "desk" in db_name
         )
 
-    # --------------------------------------------------------
-    # GENERIC TYPE MATCH
-    # --------------------------------------------------------
-
+    # Generic type fallback
     if requested_type:
-
         if requested_type in db_type:
             return True
 
         if requested_type in db_name:
             return True
 
-    # --------------------------------------------------------
-    # CATEGORY MATCH
-    # --------------------------------------------------------
-
+    # Category fallback
     if requested_category:
-
-        if db_category == requested_category:
-            return True
-
-        if requested_category in db_category:
-            return True
-
-        if requested_category in db_type:
-            return True
-
-        if requested_category in db_name:
+        if (
+            db_category == requested_category
+            or requested_category in db_category
+            or requested_category in db_type
+            or requested_category in db_name
+        ):
             return True
 
     return False
 
 
 # ============================================================
-# TECHNICAL COMPATIBILITY
+# 4. TECHNICAL COMPATIBILITY
 # ============================================================
 
 def _check_spec_compatibility(
     resource_specs: Dict,
     requirements: Dict,
 ) -> Tuple[float, List[str]]:
-    """
-    Compare resource specifications against requested
-    technical specifications.
-    """
+    """Calculate compatibility between resource specifications and requirements."""
 
     if not requirements:
-
-        return (
-            100.0,
-            ["No specific technical requirements"],
-        )
+        return 100.0, ["No specific technical requirements"]
 
     resource_specs = resource_specs or {}
     requirements = requirements or {}
@@ -473,9 +335,7 @@ def _check_spec_compatibility(
 
         total_checks += 1
 
-        req_min = requirements[
-            "ram_gb"
-        ].get(
+        req_min = requirements["ram_gb"].get(
             "minimum",
             0,
         )
@@ -522,9 +382,7 @@ def _check_spec_compatibility(
 
         total_checks += 1
 
-        req_min = requirements[
-            "storage_gb"
-        ].get(
+        req_min = requirements["storage_gb"].get(
             "minimum",
             0,
         )
@@ -548,7 +406,6 @@ def _check_spec_compatibility(
         )
 
         if "tb" in storage_text.lower():
-
             res_storage *= 1024
 
         if res_storage >= req_min:
@@ -576,9 +433,7 @@ def _check_spec_compatibility(
         total_checks += 1
 
         req_cpu = _normalize(
-            requirements[
-                "cpu"
-            ].get(
+            requirements["cpu"].get(
                 "minimum",
                 "",
             )
@@ -600,20 +455,17 @@ def _check_spec_compatibility(
             "core i7": 3,
             "i9": 4,
             "core i9": 4,
-
             "ryzen 3": 1,
             "ryzen 5": 2,
             "ryzen 7": 3,
             "ryzen 9": 4,
-
             "xeon": 3,
         }
 
         actual_level = max(
             (
                 level
-                for cpu_name, level
-                in hierarchy.items()
+                for cpu_name, level in hierarchy.items()
                 if cpu_name in res_cpu
             ),
             default=0,
@@ -622,8 +474,7 @@ def _check_spec_compatibility(
         required_level = max(
             (
                 level
-                for cpu_name, level
-                in hierarchy.items()
+                for cpu_name, level in hierarchy.items()
                 if cpu_name in req_cpu
             ),
             default=0,
@@ -637,14 +488,14 @@ def _check_spec_compatibility(
             passed_checks += 1
 
             reasons.append(
-                "✓ Meets CPU requirement "
+                f"✓ Meets CPU requirement "
                 f"({resource_specs.get('cpu', 'N/A')})"
             )
 
         else:
 
             reasons.append(
-                "✗ CPU may not meet requirement "
+                f"✗ CPU may not meet requirement "
                 f"({resource_specs.get('cpu', 'N/A')})"
             )
 
@@ -656,9 +507,7 @@ def _check_spec_compatibility(
 
         total_checks += 1
 
-        gpu_required = requirements[
-            "gpu"
-        ].get(
+        gpu_required = requirements["gpu"].get(
             "required",
             False,
         )
@@ -678,17 +527,21 @@ def _check_spec_compatibility(
                 "✓ GPU not strictly required"
             )
 
-        elif res_gpu and res_gpu.lower() not in {
-            "none",
-            "integrated",
-            "integrated graphics",
-            "",
-        }:
+        elif (
+            res_gpu
+            and res_gpu.lower()
+            not in {
+                "none",
+                "integrated",
+                "integrated graphics",
+                "",
+            }
+        ):
 
             passed_checks += 1
 
             reasons.append(
-                "✓ Dedicated GPU available "
+                f"✓ Dedicated GPU available "
                 f"({res_gpu})"
             )
 
@@ -699,15 +552,11 @@ def _check_spec_compatibility(
             )
 
     # --------------------------------------------------------
-    # FINAL TECHNICAL SCORE
+    # Final technical score
     # --------------------------------------------------------
 
     if total_checks == 0:
-
-        return (
-            100.0,
-            ["No specific technical requirements"],
-        )
+        return 100.0, ["No specific technical requirements"]
 
     score = (
         passed_checks
@@ -715,20 +564,14 @@ def _check_spec_compatibility(
         * 100
     )
 
-    return (
-        score,
-        reasons,
-    )
+    return score, reasons
 
 
 # ============================================================
-# CONDITION SCORE
+# 5. SCORING FUNCTIONS
 # ============================================================
 
-def _condition_score(
-    condition,
-):
-
+def _condition_score(condition):
     if not condition:
         return 50
 
@@ -744,14 +587,7 @@ def _condition_score(
     )
 
 
-# ============================================================
-# AVAILABILITY SCORE
-# ============================================================
-
-def _availability_score(
-    availability,
-):
-
+def _availability_score(availability):
     if not availability:
         return 50
 
@@ -767,14 +603,7 @@ def _availability_score(
     )
 
 
-# ============================================================
-# UNDERUTILIZATION SCORE
-# ============================================================
-
-def _underutilization_score(
-    utilization,
-):
-
+def _underutilization_score(utilization):
     if utilization is None:
         return 50
 
@@ -790,14 +619,7 @@ def _underutilization_score(
     return 10
 
 
-# ============================================================
-# REMAINING LIFE SCORE
-# ============================================================
-
-def _remaining_life_score(
-    months,
-):
-
+def _remaining_life_score(months):
     if months is None:
         return 50
 
@@ -814,7 +636,7 @@ def _remaining_life_score(
 
 
 # ============================================================
-# MAIN MATCHING FUNCTION
+# 6. MAIN MATCHING ENGINE
 # ============================================================
 
 def match_resources(
@@ -824,32 +646,27 @@ def match_resources(
     department_id=None,
     weights=None,
 ):
-    """
-    Find and rank resources matching the user's requirements.
-    """
+    """Find and rank resources matching the requested requirements."""
 
     if weights is None:
         weights = DEFAULT_WEIGHTS
 
     # --------------------------------------------------------
     # DATABASE FILTER
+    #
+    # IMPORTANT:
+    # Database stores values such as "Available" while our
+    # matching logic uses lowercase values.
+    #
+    # func.lower() makes this comparison case-insensitive.
     # --------------------------------------------------------
-    #
-    # Keep the DB filter broad.
-    #
-    # We intentionally DO NOT filter category/type here,
-    # because Computer -> Laptop/Desktop needs flexible
-    # matching.
-    #
 
     query = db.query(Resource).filter(
-        Resource.organization_id
-        == organization_id,
+        Resource.organization_id == organization_id,
 
-        Resource.status
-        == "active",
+        func.lower(Resource.status) == "active",
 
-        Resource.availability.in_(
+        func.lower(Resource.availability).in_(
             [
                 "available",
                 "underutilized",
@@ -860,14 +677,7 @@ def match_resources(
 
     resources = query.all()
 
-    # --------------------------------------------------------
-    # DEBUG INFORMATION
-    # --------------------------------------------------------
-
-    print(
-        "\n========== MATCHING DEBUG =========="
-    )
-
+    print("\n========== MATCHING DEBUG ==========")
     print(
         "Organization ID:",
         organization_id,
@@ -907,30 +717,20 @@ def match_resources(
     )
 
     # --------------------------------------------------------
-    # REQUESTED CATEGORY / TYPE
+    # CATEGORY / TYPE FILTER
     # --------------------------------------------------------
 
     requested_category = _normalize(
-        requirements.get(
-            "category"
-        )
+        requirements.get("category")
     )
 
     requested_type = _normalize(
-        requirements.get(
-            "type"
-        )
+        requirements.get("type")
     )
-
-    # --------------------------------------------------------
-    # FLEXIBLE CATEGORY / TYPE FILTER
-    # --------------------------------------------------------
 
     resources = [
         resource
-
         for resource in resources
-
         if _resource_matches_requested_type(
             resource,
             requested_category,
@@ -944,30 +744,22 @@ def match_resources(
     )
 
     # --------------------------------------------------------
-    # BUILD MATCH RESULTS
+    # SCORE EACH RESOURCE
     # --------------------------------------------------------
 
     matches = []
 
     for resource in resources:
 
-        # ----------------------------------------------------
-        # PRIVATE RESOURCE VISIBILITY
-        # ----------------------------------------------------
-
+        # Private resources can only be matched inside
+        # their department.
         if (
-            resource.share_scope
-            == "private"
-
-            and resource.department_id
-            != department_id
+            resource.share_scope == "private"
+            and resource.department_id != department_id
         ):
             continue
 
-        # ----------------------------------------------------
-        # TECHNICAL COMPATIBILITY
-        # ----------------------------------------------------
-
+        # Technical compatibility
         tech_score, tech_reasons = (
             _check_spec_compatibility(
                 resource.specifications or {},
@@ -978,10 +770,7 @@ def match_resources(
             )
         )
 
-        # ----------------------------------------------------
-        # TECHNICAL REJECTION
-        # ----------------------------------------------------
-
+        # Keep the existing 50% compatibility threshold.
         if tech_score < 50:
 
             print(
@@ -992,10 +781,7 @@ def match_resources(
 
             continue
 
-        # ----------------------------------------------------
-        # OTHER SCORES
-        # ----------------------------------------------------
-
+        # Other scores
         cond_score = _condition_score(
             resource.condition
         )
@@ -1004,26 +790,20 @@ def match_resources(
             resource.availability
         )
 
-        underutil_score = (
-            _underutilization_score(
-                resource.utilization
-            )
+        underutil_score = _underutilization_score(
+            resource.utilization
         )
 
         life_score = _remaining_life_score(
             resource.remaining_useful_life_months
         )
 
-        # ----------------------------------------------------
-        # LOGISTICS SCORE
-        # ----------------------------------------------------
-
+        # Same department gets better logistics score.
         logistics_score = (
             100
             if (
                 department_id
-                and resource.department_id
-                == department_id
+                and resource.department_id == department_id
             )
             else 70
         )
@@ -1034,22 +814,15 @@ def match_resources(
 
         overall = (
             tech_score
-            * weights[
-                "technical_compatibility"
-            ]
-
+            * weights["technical_compatibility"]
             + cond_score
             * weights["condition"]
-
             + avail_score
             * weights["availability"]
-
             + underutil_score
             * weights["underutilization"]
-
             + logistics_score
             * weights["logistics"]
-
             + life_score
             * weights["remaining_life"]
         )
@@ -1061,43 +834,33 @@ def match_resources(
         explanation_parts = []
 
         if underutil_score >= 75:
-
             explanation_parts.append(
                 "Currently underutilized"
             )
 
         if cond_score >= 80:
-
             explanation_parts.append(
                 "Good condition"
             )
 
         if avail_score >= 80:
-
             explanation_parts.append(
                 "Available for reallocation"
             )
 
         explanation = (
             "Recommended because: "
-            + "; ".join(
-                tech_reasons
-            )
+            + "; ".join(tech_reasons)
         )
 
         if explanation_parts:
 
             explanation += (
                 ". Also: "
-                + "; ".join(
-                    explanation_parts
-                )
+                + "; ".join(explanation_parts)
             )
 
-        # ----------------------------------------------------
-        # DEPARTMENT
-        # ----------------------------------------------------
-
+        # Department
         dept = (
             db.query(Department)
             .filter(
@@ -1106,10 +869,6 @@ def match_resources(
             )
             .first()
         )
-
-        # ----------------------------------------------------
-        # RESULT
-        # ----------------------------------------------------
 
         matches.append(
             {
@@ -1143,9 +902,7 @@ def match_resources(
                     or 0
                 ),
 
-                "availability": (
-                    resource.availability
-                ),
+                "availability": resource.availability,
 
                 "compatibility_score": round(
                     tech_score,
@@ -1190,17 +947,12 @@ def match_resources(
                         1,
                     ),
 
-                    "technical_reasons": (
-                        tech_reasons
-                    ),
+                    "technical_reasons": tech_reasons,
                 },
             }
         )
 
-    # --------------------------------------------------------
-    # SORT BY OVERALL SCORE
-    # --------------------------------------------------------
-
+    # Highest score first
     matches.sort(
         key=lambda x: x["overall_score"],
         reverse=True,
@@ -1215,27 +967,21 @@ def match_resources(
 
 
 # ============================================================
-# OPTIMAL COMBINATION
+# 7. MULTI-RESOURCE COMBINATION
 # ============================================================
 
 def build_optimal_combination(
     matches,
     required_quantity,
 ):
-    """
-    Build a combination of matching resources
-    to satisfy a requested quantity.
-    """
+    """Select the best available resources for the requested quantity."""
 
     if not matches:
 
         return {
             "sources": [],
-
             "total_quantity": 0,
-
             "combined_score": 0,
-
             "explanation": (
                 "No compatible resources found."
             ),
@@ -1247,76 +993,51 @@ def build_optimal_combination(
 
     total_score = 0
 
-    # --------------------------------------------------------
-    # SELECT BEST MATCHES
-    # --------------------------------------------------------
-
     for match in matches:
 
         if remaining <= 0:
             break
 
-        selected.append(
-            match
-        )
+        selected.append(match)
 
         remaining -= 1
 
-        total_score += (
-            match["overall_score"]
-        )
-
-    # --------------------------------------------------------
-    # COMBINED SCORE
-    # --------------------------------------------------------
+        total_score += match["overall_score"]
 
     combined_score = (
-        total_score
-        / len(selected)
+        total_score / len(selected)
         if selected
         else 0
     )
 
-    # --------------------------------------------------------
-    # EXPLANATION
-    # --------------------------------------------------------
-
     if remaining > 0:
 
         explanation = (
-            f"Found {len(selected)} of "
-            f"{required_quantity} required. "
-            f"{remaining} additional needed "
-            f"externally."
+            f"Found {len(selected)} "
+            f"of {required_quantity} required. "
+            f"{remaining} additional needed externally."
         )
 
     else:
 
         departments = set(
-            resource[
-                "department_name"
-            ]
+            resource["department_name"]
             for resource in selected
         )
 
         explanation = (
-            f"All {required_quantity} "
-            f"resources found across "
-            f"{len(departments)} department(s): "
+            f"All {required_quantity} resources "
+            f"found across {len(departments)} "
+            f"department(s): "
             f"{', '.join(departments)}."
         )
 
     return {
         "sources": selected,
-
-        "total_quantity": len(
-            selected
-        ),
-
+        "total_quantity": len(selected),
         "combined_score": round(
             combined_score,
             1,
         ),
-
         "explanation": explanation,
     }

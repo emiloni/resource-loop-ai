@@ -209,7 +209,52 @@ def _resolve_department(
 # ---------------------------------------------------------------------------
 # Specifications JSON parsing
 # ---------------------------------------------------------------------------
+def _build_specifications(row: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Build the normalized specifications JSON from CSV columns.
 
+    Supports both:
+    1. A JSON `specifications` column
+    2. Individual columns such as cpu, ram, storage, material_or_specs
+    """
+
+    specs: Dict[str, Any] = {}
+
+    # If an explicit JSON specifications column exists, use it first.
+    raw_json = (row.get("specifications") or "").strip()
+
+    if raw_json:
+        parsed, error = _parse_specifications(raw_json)
+        if error is None and parsed:
+            specs.update(parsed)
+
+    # Individual specification columns
+    cpu = (row.get("cpu") or "").strip()
+    ram = (row.get("ram") or "").strip()
+    storage = (row.get("storage") or "").strip()
+
+    if cpu:
+        specs["cpu"] = cpu
+
+    if ram:
+        specs["ram"] = ram
+
+    if storage:
+        specs["storage"] = storage
+
+    # material_or_specs is used for things such as GPU or material.
+    extra = (row.get("material_or_specs") or "").strip()
+
+    if extra:
+        category = (row.get("category") or "").strip().lower()
+        resource_type = (row.get("type") or "").strip().lower()
+
+        if category == "computer" or "computer" in resource_type:
+            specs["gpu"] = extra
+        else:
+            specs["material"] = extra
+
+    return specs
 def _parse_specifications(raw: str) -> Tuple[Optional[Dict], Optional[str]]:
     """Parse a JSON string into a dict.
 
@@ -322,11 +367,7 @@ def validate_and_normalize(
                     continue
 
         # ── Specifications JSON ────────────────────────────────────
-        specs, specs_err = _parse_specifications(row.get("specifications", ""))
-        if specs_err:
-            errors.append({"row": i, "errors": [specs_err]})
-            continue
-
+        specs = _build_specifications(row)
         # ── Owner (optional — must be NULL when blank) ─────────────
         owner_id_raw = (row.get("owner_id") or "").strip()
         owner_id = None
