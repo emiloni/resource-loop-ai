@@ -1,0 +1,10 @@
+resource_id,category,type,name,organization,department,location,condition,availability,utilization,remaining_useful_life_years,specifications,share_scope,description,owner_id
+RL001,Electronics,Desktop PC,Dell OptiPlex 7090,ITER,CSE Department,Building A Room 101,Good,available,Underutilized,3,"{""cpu"":""Intel i7-12700"",""ram"":""16GB"",""storage"":""512GB SSD""}",organization,Office desktop PC,,
+RL002,Electronics,Monitor,LG 27-inch,ITER,CSE Department,Building A Room 101,Excellent,available,Unused,5,"{""screen_size"":""27 inches"",""resolution"":""1440p""}",organization,Unused monitor,,
+RL003,Furniture,Chair,Herman Miller Aeron,ITER,Administration,Building B Room 205,Fair,available,Low,2,"{""material"":""Mesh"",""damage"":""Minor wear""}",locality,Office chair with minor wear,,
+RL004,Electronics,Laptop,ThinkPad T14,Local School,IT Department,Main Office,Good,available,High,4,"{""cpu"":""AMD Ryzen 5"",""ram"":""8GB"",""storage"":""256GB SSD""}",locality,School laptop,,
+RL005,Laboratory Equipment,Oscilloscope,Tektronix TBS1104C,ITER,Electronics Lab,Lab Building Room 3,Excellent,available,Moderate,7,"{""brand"":""Tektronix"",""channels"":4}",organization,Lab oscilloscope,
+RL006,Electronics,Desktop PC,HP EliteDesk 800,NonExistentOrg,Some Department,Office,Good,available,Fully Utilized,3,"{}",organization,Test missing org,
+RL007,Electronics,Desktop PC,Lenovo ThinkCentre,ITER,NonExistent Dept,Office,Good,available,50,3,"{""invalid_json"":""}",organization,Test bad specs JSON,
+RL008,Electronics,Desktop PC,Dell OptiPlex 3080,ITER,CSE Department,Building A,Good,available,25,4,"{""cpu"":""Intel i5"",""ram"":""8GB""}",organization,Test blank owner,
+RL009,Electronics,Desktop PC,Lenovo M920q,ITER,CSE Department,Building A,Good,available,20,3,"{""cpu"":""Intel i7"",""ram"":""16GB""}",organization,Duplicate of RL001 resource_id,

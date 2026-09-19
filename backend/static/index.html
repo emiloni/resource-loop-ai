@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ResourceLoop AI — Circular Resource Intelligence</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#f0fdfa', 100: '#ccfbf1', 200: '#99f6e4', 300: '#5eead4', 400: '#2dd4bf', 500: '#14b8a6', 600: '#0d9488', 700: '#0f766e', 800: '#115e59', 900: '#134e4a' },
+                        surface: { 50: '#f9fafb', 100: '#f3f4f6', 200: '#e5e7eb', 300: '#d1d5db' },
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', system-ui, sans-serif; }
+        .page { display: none; }
+        .page.active { display: block; }
+        .nav-item.active { background-color: #f0fdfa; color: #0d9488; font-weight: 600; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .spinner { border: 3px solid #e5e7eb; border-top: 3px solid #14b8a6; border-radius: 50%; width: 32px; height: 32px; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        .card-hover:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
+        .score-bar { height: 6px; border-radius: 3px; background: #e5e7eb; overflow: hidden; }
+        .score-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+    </style>
+</head>
+<body class="h-full bg-surface-50">
+
+<!-- ═══════════════ LAYOUT ═══════════════ -->
+<div class="flex h-full" id="app">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-surface-200 flex flex-col h-full fixed z-30" id="sidebar">
+        <!-- Logo -->
+        <div class="p-5 border-b border-surface-200">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold text-gray-900 leading-tight">ResourceLoop</h1>
+                    <span class="text-[10px] font-medium text-brand-600 tracking-wider uppercase">AI Platform</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+            <a onclick="navigate('dashboard')" class="nav-item active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-surface-50 cursor-pointer transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                Dashboard
+            </a>
+            <a onclick="navigate('resources')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-surface-50 cursor-pointer transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                Resources
+            </a>
+            <a onclick="navigate('find-resource')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-surface-50 cursor-pointer transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                Find a Resource
+            </a>
+            <a onclick="navigate('circularity')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-surface-50 cursor-pointer transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                Circularity
+            </a>
+            <a onclick="navigate('network')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-surface-50 cursor-pointer transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                Resource Network
+            </a>
+            <a onclick="navigate('documents')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-surface-50 cursor-pointer transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                Documents & Knowledge
+            </a>
+            <a onclick="navigate('impact')" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-600 hover:bg-surface-50 cursor-pointer transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+                Impact
+            </a>
+        </nav>
+
+        <!-- SDG Badge -->
+        <div class="p-4 border-t border-surface-200">
+            <div class="bg-brand-50 rounded-lg p-3">
+                <p class="text-[11px] font-semibold text-brand-700 uppercase tracking-wider">Aligned with</p>
+                <p class="text-xs font-bold text-brand-800 mt-0.5">SDG 12 — Responsible Consumption &amp; Production</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 ml-64">
+        <!-- Top Bar -->
+        <header class="bg-white border-b border-surface-200 px-6 py-3 flex items-center justify-between sticky top-0 z-20">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="lg:hidden p-1 rounded hover:bg-surface-100">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                </button>
+                <div id="page-title" class="text-lg font-semibold text-gray-900">Dashboard</div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="flex items-center gap-2 bg-surface-50 rounded-lg px-3 py-1.5">
+                    <span class="text-xs text-gray-500">Organization:</span>
+                    <select id="org-select" class="bg-transparent text-sm font-medium text-gray-700 outline-none cursor-pointer" onchange="changeOrganization(this.value)">
+                        <option value="1">ITER</option>
+                        <option value="2">Local School</option>
+                        <option value="3">Community Hospital</option>
+                        <option value="4">Green NGO</option>
+                        <option value="5">Tech Startup</option>
+                    </select>
+                </div>
+                <div class="flex items-center gap-2 bg-surface-50 rounded-lg px-3 py-1.5">
+                    <span class="text-xs text-gray-500">Level:</span>
+                    <select class="bg-transparent text-sm font-medium text-gray-700 outline-none cursor-pointer">
+                        <option>Organization</option>
+                        <option>Locality</option>
+                        <option disabled>City (Coming Soon)</option>
+                    </select>
+                </div>
+                <div class="w-8 h-8 bg-brand-100 rounded-full flex items-center justify-center">
+                    <span class="text-sm font-semibold text-brand-700">A</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page Content Area -->
+        <div class="p-6" id="content-area">
+
+            <!-- ═══ DASHBOARD PAGE ═══ -->
+            <div id="page-dashboard" class="page active fade-in">
+                <!-- Hero -->
+                <div class="bg-white rounded-2xl border border-surface-200 p-8 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Turn unused resources into useful opportunities.</h2>
+                    <p class="text-gray-500 mt-2 max-w-2xl">ResourceLoop AI helps organizations find what they already have before they buy or discard something new.</p>
+                    <div class="flex gap-4 mt-6">
+                        <button onclick="navigate('find-resource')" class="px-6 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-medium flex items-center gap-2 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                            I Need a Resource
+                        </button>
+                        <button onclick="navigate('circularity')" class="px-6 py-3 bg-white border-2 border-brand-500 text-brand-600 hover:bg-brand-50 rounded-xl font-medium flex items-center gap-2 transition-colors">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            I Have a Resource
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6" id="dashboard-stats">
+                    <div class="bg-white rounded-xl border border-surface-200 p-5 card-hover transition-all">
+                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Total Resources</p>
+                        <p class="text-3xl font-bold text-gray-900 mt-1" id="stat-total">—</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-surface-200 p-5 card-hover transition-all">
+                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Available</p>
+                        <p class="text-3xl font-bold text-brand-600 mt-1" id="stat-available">—</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-surface-200 p-5 card-hover transition-all">
+                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">Underutilized</p>
+                        <p class="text-3xl font-bold text-amber-500 mt-1" id="stat-underutilized">—</p>
+                    </div>
+                    <div class="bg-white rounded-xl border border-surface-200 p-5 card-hover transition-all">
+                        <p class="text-xs font-medium text-gray-500 uppercase tracking-wider">In Maintenance</p>
+                        <p class="text-3xl font-bold text-gray-400 mt-1" id="stat-maintenance">—</p>
+                    </div>
+                </div>
+
+                <!-- Opportunities -->
+                <div class="bg-white rounded-2xl border border-surface-200 p-6 mb-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Opportunities</h3>
+                    <div class="space-y-3" id="dashboard-opportunities">
+                        <div class="flex items-center gap-4 p-3 bg-amber-50 rounded-xl">
+                            <div class="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center"><span class="text-lg">📊</span></div>
+                            <div class="flex-1"><p class="text-sm font-medium text-gray-900" id="opp-underutil">Loading...</p></div>
+                        </div>
+                        <div class="flex items-center gap-4 p-3 bg-blue-50 rounded-xl">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center"><span class="text-lg">🔄</span></div>
+                            <div class="flex-1"><p class="text-sm font-medium text-gray-900" id="opp-redist">Loading...</p></div>
+                        </div>
+                        <div class="flex items-center gap-4 p-3 bg-green-50 rounded-xl">
+                            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center"><span class="text-lg">🔧</span></div>
+                            <div class="flex-1"><p class="text-sm font-medium text-gray-900" id="opp-repair">Loading...</p></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Impact Preview + Underutilized -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Impact Summary -->
+                    <div class="bg-white rounded-2xl border border-surface-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Impact Summary</h3>
+                        <div class="space-y-3" id="dashboard-impact">
+                            <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Resources Reused</span><span class="font-semibold text-gray-900" id="imp-reused">—</span></div>
+                            <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Resources Redistributed</span><span class="font-semibold text-gray-900" id="imp-redist">—</span></div>
+                            <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Purchases Avoided</span><span class="font-semibold text-brand-600" id="imp-purchases">—</span></div>
+                            <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Est. Cost Avoided</span><span class="font-semibold text-brand-600" id="imp-cost">—</span></div>
+                            <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Est. Waste Avoided</span><span class="font-semibold text-green-600" id="imp-waste">—</span></div>
+                            <div class="flex justify-between items-center"><span class="text-sm text-gray-600">Est. CO₂ Saved</span><span class="font-semibold text-green-600" id="imp-co2">—</span></div>
+                        </div>
+                        <p class="text-[10px] text-gray-400 mt-3">Estimates based on configured assumptions.</p>
+                    </div>
+
+                    <!-- Underutilized Resources -->
+                    <div class="bg-white rounded-2xl border border-surface-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Resources with Unused Potential</h3>
+                        <div class="space-y-3 max-h-72 overflow-y-auto" id="dashboard-underutilized">
+                            <p class="text-sm text-gray-400">Loading...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ RESOURCES PAGE ═══ -->
+            <div id="page-resources" class="page fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Resource Inventory</h2>
+                        <p class="text-gray-500 text-sm mt-1">Browse and manage all resources in the organization.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button onclick="showImportModal()" class="px-4 py-2 bg-white border border-surface-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-surface-50 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                            Import CSV/Excel
+                        </button>
+                        <button onclick="showAddResourceModal()" class="px-4 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600 flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            Add Resource
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Filters -->
+                <div class="bg-white rounded-xl border border-surface-200 p-4 mb-6 flex flex-wrap gap-3 items-center">
+                    <input id="res-search" type="text" placeholder="Search resources..." class="px-3 py-2 border border-surface-300 rounded-lg text-sm flex-1 min-w-[200px] outline-none focus:border-brand-400" oninput="debounce(loadResources, 300)()">
+                    <select id="res-category" class="px-3 py-2 border border-surface-300 rounded-lg text-sm outline-none" onchange="loadResources()">
+                        <option value="">All Categories</option>
+                        <option>Electronics</option>
+                        <option>Furniture</option>
+                        <option>Laboratory Equipment</option>
+                        <option>Office Equipment</option>
+                        <option>Books</option>
+                    </select>
+                    <select id="res-availability" class="px-3 py-2 border border-surface-300 rounded-lg text-sm outline-none" onchange="loadResources()">
+                        <option value="">All Status</option>
+                        <option value="available">Available</option>
+                        <option value="underutilized">Underutilized</option>
+                        <option value="in_use">In Use</option>
+                        <option value="maintenance">Maintenance</option>
+                    </select>
+                    <select id="res-condition" class="px-3 py-2 border border-surface-300 rounded-lg text-sm outline-none" onchange="loadResources()">
+                        <option value="">All Conditions</option>
+                        <option>Excellent</option>
+                        <option>Good</option>
+                        <option>Fair</option>
+                        <option>Poor</option>
+                    </select>
+                </div>
+
+                <!-- Resource Table -->
+                <div class="bg-white rounded-xl border border-surface-200 overflow-hidden">
+                    <table class="w-full">
+                        <thead class="bg-surface-50 border-b border-surface-200">
+                            <tr>
+                                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Resource</th>
+                                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
+                                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Department</th>
+                                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Condition</th>
+                                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Utilization</th>
+                                <th class="text-left px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-surface-100" id="resource-table-body">
+                            <tr><td colspan="7" class="px-4 py-12 text-center text-gray-400 text-sm">Loading resources...</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="px-4 py-3 border-t border-surface-200 flex items-center justify-between" id="resource-pagination">
+                        <span class="text-sm text-gray-500" id="res-page-info">—</span>
+                        <div class="flex gap-2">
+                            <button id="res-prev-btn" onclick="resPage(-1)" class="px-3 py-1 text-sm border rounded-lg hover:bg-surface-50 disabled:opacity-40" disabled>← Previous</button>
+                            <button id="res-next-btn" onclick="resPage(1)" class="px-3 py-1 text-sm border rounded-lg hover:bg-surface-50 disabled:opacity-40" disabled>Next →</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ FIND A RESOURCE PAGE ═══ -->
+            <div id="page-find-resource" class="page fade-in">
+                <div class="max-w-4xl mx-auto">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl font-bold text-gray-900">What do you need?</h2>
+                        <p class="text-gray-500 mt-2">Describe your requirements in natural language. The AI will find existing resources that match.</p>
+                    </div>
+
+                    <!-- Input -->
+                    <div class="bg-white rounded-2xl border border-surface-200 p-6 mb-6">
+                        <textarea id="requirement-input" rows="4" class="w-full border border-surface-300 rounded-xl p-4 text-sm outline-none focus:border-brand-400 resize-none" placeholder="Example: We need 10 computers for an AI lab with at least 16GB RAM, 512GB SSD and dedicated graphics."></textarea>
+                        <div class="flex items-center justify-between mt-4">
+                            <div class="flex gap-2">
+                                <button onclick="fillExample(1)" class="px-3 py-1.5 text-xs bg-surface-100 rounded-lg hover:bg-surface-200 transition-colors">💻 10 AI Lab Computers</button>
+                                <button onclick="fillExample(2)" class="px-3 py-1.5 text-xs bg-surface-100 rounded-lg hover:bg-surface-200 transition-colors">🖥 5 Office Monitors</button>
+                                <button onclick="fillExample(3)" class="px-3 py-1.5 text-xs bg-surface-100 rounded-lg hover:bg-surface-200 transition-colors">🪑 20 Ergonomic Chairs</button>
+                            </div>
+                            <button onclick="searchResources()" id="search-btn" class="px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-medium text-sm transition-colors flex items-center gap-2">
+                                Find Existing Resources
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Parsed Requirements -->
+                    <div id="parsed-requirements" class="hidden mb-6">
+                        <div class="bg-brand-50 rounded-xl border border-brand-200 p-5">
+                            <h4 class="text-sm font-semibold text-brand-800 mb-3 flex items-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                                Parsed Requirements
+                            </h4>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm" id="parsed-grid"></div>
+                        </div>
+                    </div>
+
+                    <!-- Results -->
+                    <div id="matching-results" class="hidden">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-gray-900" id="match-count"></h3>
+                            <p class="text-sm text-green-600 font-medium" id="match-message"></p>
+                        </div>
+
+                        <!-- Combination -->
+                        <div id="combination-card" class="hidden bg-brand-50 rounded-2xl border border-brand-200 p-6 mb-6">
+                            <h4 class="font-semibold text-brand-800 mb-2">Recommended Combination</h4>
+                            <p class="text-sm text-brand-700 mb-3" id="combination-explanation"></p>
+                            <div class="space-y-2" id="combination-sources"></div>
+                        </div>
+
+                        <!-- Individual Matches -->
+                        <div class="space-y-4" id="match-list"></div>
+                    </div>
+
+                    <!-- Loading -->
+                    <div id="match-loading" class="hidden text-center py-12">
+                        <div class="spinner mx-auto mb-4"></div>
+                        <p class="text-sm text-gray-500">Analyzing requirements and searching resources...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ CIRCULARITY PAGE ═══ -->
+            <div id="page-circularity" class="page fade-in">
+                <div class="max-w-4xl mx-auto">
+                    <div class="text-center mb-8">
+                        <h2 class="text-2xl font-bold text-gray-900">Give your resource a better next life.</h2>
+                        <p class="text-gray-500 mt-2">Describe or upload a resource and get AI-powered recommendations for its best next action.</p>
+                    </div>
+
+                    <!-- Input -->
+                    <div class="bg-white rounded-2xl border border-surface-200 p-6 mb-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <!-- Image Upload -->
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 mb-2 block">Upload Image</label>
+                                <div class="border-2 border-dashed border-surface-300 rounded-xl p-6 text-center hover:border-brand-400 transition-colors cursor-pointer" onclick="document.getElementById('circularity-image').click()">
+                                    <svg class="w-10 h-10 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                    <p class="text-sm text-gray-500">Click to upload an image</p>
+                                    <p class="text-xs text-gray-400 mt-1">JPG, PNG up to 10MB</p>
+                                </div>
+                                <input type="file" id="circularity-image" class="hidden" accept="image/*" onchange="handleCircularityImage(this)">
+                                <div id="image-preview" class="hidden mt-3">
+                                    <img id="preview-img" class="w-full h-32 object-cover rounded-lg" alt="Preview">
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div>
+                                <label class="text-sm font-medium text-gray-700 mb-2 block">Or Describe the Resource</label>
+                                <textarea id="circularity-description" rows="5" class="w-full border border-surface-300 rounded-xl p-3 text-sm outline-none focus:border-brand-400 resize-none" placeholder="Example: Old office chair with broken armrest, metal frame, fabric seat, still has good wheels and gas lift."></textarea>
+                                <div class="mt-3 flex gap-2">
+                                    <button onclick="fillCircularityExample(1)" class="px-3 py-1.5 text-xs bg-surface-100 rounded-lg hover:bg-surface-200">🪑 Broken Chair</button>
+                                    <button onclick="fillCircularityExample(2)" class="px-3 py-1.5 text-xs bg-surface-100 rounded-lg hover:bg-surface-200">💻 Old Laptop</button>
+                                    <button onclick="fillCircularityExample(3)" class="px-3 py-1.5 text-xs bg-surface-100 rounded-lg hover:bg-surface-200">🖨 Cracked Printer</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex justify-center">
+                            <button onclick="analyzeCircularity()" id="circularity-btn" class="px-8 py-3 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-medium transition-colors flex items-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                                Analyze Resource
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Results -->
+                    <div id="circularity-loading" class="hidden text-center py-12">
+                        <div class="spinner mx-auto mb-4"></div>
+                        <p class="text-sm text-gray-500">Analyzing resource characteristics...</p>
+                    </div>
+
+                    <div id="circularity-results" class="hidden">
+                        <!-- AI Analysis Card -->
+                        <div class="bg-white rounded-2xl border border-surface-200 p-6 mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                                <span class="w-6 h-6 bg-brand-100 rounded-full flex items-center justify-center text-xs font-bold text-brand-600">AI</span>
+                                Circularity Assessment
+                            </h3>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="circularity-analysis-grid"></div>
+                            <p class="text-[10px] text-gray-400 mt-3">AI assessment — please verify before taking action.</p>
+                        </div>
+
+                        <!-- Recommendation -->
+                        <div class="bg-gradient-to-br from-brand-50 to-white rounded-2xl border border-brand-200 p-6 mb-6">
+                            <h3 class="text-lg font-semibold text-brand-800 mb-2">Recommendation</h3>
+                            <div id="circularity-recommended" class="mb-3"></div>
+                            <div id="circularity-path" class="mb-3"></div>
+                            <div id="circularity-score" class="mb-3"></div>
+                            <!-- Why this recommendation -->
+                            <div class="bg-white/60 rounded-xl p-4 mb-4">
+                                <h4 class="text-sm font-semibold text-gray-800 mb-2">Why This Recommendation?</h4>
+                                <ul id="circularity-why" class="space-y-1"></ul>
+                            </div>
+                            <p class="text-sm text-gray-600" id="circularity-explanation"></p>
+                        </div>
+
+                        <!-- Next Actions -->
+                        <div class="bg-white rounded-2xl border border-surface-200 p-6 mb-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-3">Next Actions</h3>
+                            <div class="flex flex-wrap gap-3" id="circularity-actions"></div>
+                        </div>
+
+                        <!-- Alternative Actions -->
+                        <div class="bg-white rounded-2xl border border-surface-200 p-6">
+                            <h3 class="text-lg font-semibold text-gray-900 mb-4">Alternative Actions</h3>
+                            <div class="space-y-3" id="circularity-alternatives"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ NETWORK PAGE ═══ -->
+            <div id="page-network" class="page fade-in">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Resource Network</h2>
+                    <p class="text-gray-500 mt-1">Cross-organization resource sharing and potential connections.</p>
+                </div>
+
+                <!-- Network Overview -->
+                <div id="network-content">
+                    <div class="text-center py-12">
+                        <div class="spinner mx-auto mb-4"></div>
+                        <p class="text-sm text-gray-500">Loading network data...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ DOCUMENTS PAGE ═══ -->
+            <div id="page-documents" class="page fade-in">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">Documents & Knowledge</h2>
+                        <p class="text-gray-500 mt-1">Upload documents and query organizational policies.</p>
+                    </div>
+                    <button onclick="showUploadDocModal()" class="px-4 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                        Upload Document
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Document List -->
+                    <div class="bg-white rounded-2xl border border-surface-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
+                        <div class="space-y-3" id="document-list">
+                            <p class="text-sm text-gray-400">Loading documents...</p>
+                        </div>
+                    </div>
+
+                    <!-- RAG Query -->
+                    <div class="bg-white rounded-2xl border border-surface-200 p-6">
+                        <h3 class="text-lg font-semibold text-gray-900 mb-4">Ask About Policies</h3>
+                        <textarea id="rag-query" rows="3" class="w-full border border-surface-300 rounded-xl p-3 text-sm outline-none focus:border-brand-400 resize-none mb-3" placeholder="Example: Can a department transfer unused computers to another department?"></textarea>
+                        <div class="flex gap-2 mb-4">
+                            <button onclick="fillRAGExample(1)" class="px-3 py-1.5 text-xs bg-surface-100 rounded-lg hover:bg-surface-200">Transfer Policy</button>
+                            <button onclick="fillRAGExample(2)" class="px-3 py-1.5 text-xs bg-surface-100 rounded-lg hover:bg-surface-200">Procurement Rules</button>
+                            <button onclick="fillRAGExample(3)" class="px-3 py-1.5 text-xs bg-surface-100 rounded-lg hover:bg-surface-200">Maintenance</button>
+                        </div>
+                        <button onclick="queryRAG()" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-lg text-sm font-medium transition-colors w-full">Ask</button>
+
+                        <div id="rag-results" class="hidden mt-4 space-y-3">
+                            <div class="bg-surface-50 rounded-xl p-4">
+                                <p class="text-sm text-gray-700" id="rag-answer"></p>
+                            </div>
+                            <div id="rag-sources"></div>
+                            <p class="text-[10px] text-gray-400" id="rag-disclaimer"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ═══ IMPACT PAGE ═══ -->
+            <div id="page-impact" class="page fade-in">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Impact Dashboard</h2>
+                    <p class="text-gray-500 mt-1">Measurable sustainability and circularity impact.</p>
+                </div>
+
+                <div id="impact-content">
+                    <div class="text-center py-12">
+                        <div class="spinner mx-auto mb-4"></div>
+                        <p class="text-sm text-gray-500">Loading impact data...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+<!-- Import Modal -->
+<div id="import-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-2xl w-full max-w-lg mx-4 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Import Resources from CSV/Excel</h3>
+        <div id="import-upload-area" class="border-2 border-dashed border-surface-300 rounded-xl p-8 text-center mb-4">
+            <input type="file" id="import-file" class="hidden" accept=".csv,.xlsx,.xls" onchange="previewImport(this)">
+            <svg class="w-10 h-10 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            <p class="text-sm text-gray-500">Click to select a CSV or Excel file</p>
+            <button onclick="document.getElementById('import-file').click()" class="mt-3 px-4 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium">Select File</button>
+        </div>
+        <div id="import-preview" class="hidden"></div>
+        <div class="flex justify-end gap-3 mt-4">
+            <button onclick="closeModal('import-modal')" class="px-4 py-2 text-sm text-gray-600 border rounded-lg hover:bg-surface-50">Cancel</button>
+            <button id="import-confirm-btn" onclick="confirmImport()" class="hidden px-4 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600">Confirm Import</button>
+        </div>
+    </div>
+</div>
+
+<!-- Add Resource Modal -->
+<div id="add-resource-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-2xl w-full max-w-lg mx-4 p-6 max-h-[85vh] overflow-y-auto">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Add New Resource</h3>
+        <form id="add-resource-form" class="space-y-4">
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-xs font-medium text-gray-600 block mb-1">Resource ID *</label><input name="resource_id" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm" required></div>
+                <div><label class="text-xs font-medium text-gray-600 block mb-1">Name *</label><input name="name" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm" required></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-xs font-medium text-gray-600 block mb-1">Category *</label><select name="category" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm"><option>Electronics</option><option>Furniture</option><option>Laboratory Equipment</option><option>Office Equipment</option><option>Educational Equipment</option><option>Books</option><option>Infrastructure</option><option>Other</option></select></div>
+                <div><label class="text-xs font-medium text-gray-600 block mb-1">Type *</label><input name="type" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm" placeholder="e.g. Computer, Chair" required></div>
+            </div>
+            <div><label class="text-xs font-medium text-gray-600 block mb-1">Description</label><textarea name="description" rows="2" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm"></textarea></div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-xs font-medium text-gray-600 block mb-1">Condition</label><select name="condition" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm"><option>Excellent</option><option>Good</option><option>Fair</option><option>Poor</option><option>Non-functional</option></select></div>
+                <div><label class="text-xs font-medium text-gray-600 block mb-1">Availability</label><select name="availability" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm"><option value="available">Available</option><option value="in_use">In Use</option><option value="underutilized">Underutilized</option><option value="maintenance">Maintenance</option></select></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-xs font-medium text-gray-600 block mb-1">Location</label><input name="location" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm"></div>
+                <div><label class="text-xs font-medium text-gray-600 block mb-1">Department ID</label><input name="department_id" type="number" value="1" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+                <div><label class="text-xs font-medium text-gray-600 block mb-1">Utilization %</label><input name="utilization" type="number" value="0" min="0" max="100" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm"></div>
+                <div><label class="text-xs font-medium text-gray-600 block mb-1">Remaining Life (months)</label><input name="remaining_useful_life_months" type="number" value="36" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm"></div>
+            </div>
+        </form>
+        <div class="flex justify-end gap-3 mt-4">
+            <button onclick="closeModal('add-resource-modal')" class="px-4 py-2 text-sm text-gray-600 border rounded-lg hover:bg-surface-50">Cancel</button>
+            <button onclick="submitNewResource()" class="px-4 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600">Create Resource</button>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Document Modal -->
+<div id="upload-doc-modal" class="fixed inset-0 bg-black/40 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-2xl w-full max-w-md mx-4 p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Upload Document</h3>
+        <div class="space-y-4">
+            <div><label class="text-xs font-medium text-gray-600 block mb-1">Document Name</label><input id="doc-name" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm" placeholder="e.g. Equipment Transfer Policy"></div>
+            <div><label class="text-xs font-medium text-gray-600 block mb-1">Category</label><select id="doc-category" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm"><option value="policy">Policy</option><option value="manual">Manual</option><option value="procedure">Procedure</option><option value="other">Other</option></select></div>
+            <div><label class="text-xs font-medium text-gray-600 block mb-1">File</label><input type="file" id="doc-file" class="w-full border border-surface-300 rounded-lg px-3 py-2 text-sm" accept=".pdf,.docx,.doc,.txt"></div>
+        </div>
+        <div class="flex justify-end gap-3 mt-4">
+            <button onclick="closeModal('upload-doc-modal')" class="px-4 py-2 text-sm text-gray-600 border rounded-lg hover:bg-surface-50">Cancel</button>
+            <button onclick="uploadDocument()" class="px-4 py-2 bg-brand-500 text-white rounded-lg text-sm font-medium hover:bg-brand-600">Upload</button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+@"
+backend/venv/
+venv/
+__pycache__/
+*.pyc
+
+node_modules/
+.next/
+
+.env
+.env.*
+!.env.example
+
+*.db
+*.sqlite
+*.sqlite3
+
+uploads/
+backend/uploads/
+
+*.log
+.DS_Store
+Thumbs.db
+"@ | Set-Content .gitignore
