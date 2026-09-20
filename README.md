@@ -1,191 +1,411 @@
 # ResourceLoop AI
 
-**AI-Powered Resource Circularity and Redistribution Platform**
+**AI-Powered Resource Circularity & Redistribution Platform**
 
-> Before an organization buys, manufactures, or discards something, first ask: can an existing resource solve the problem?
+> **Before buying new resources or discarding usable ones, ask: what already exists that can solve the problem?**
 
-## What is ResourceLoop AI?
+---
 
-ResourceLoop AI is a circular resource intelligence platform that helps organizations discover unused potential in existing resources before purchasing new ones or sending usable items to waste.
+## 🚀 Project at a Glance
 
-It combines:
-- **Resource Inventory** — Track all organizational resources
-- **AI Matching** — Find existing resources that satisfy new requirements
-- **Underutilization Analysis** — Detect resources with unused potential
-- **Circularity Engine** — Recommend the best next life for unwanted resources
-- **Cross-Organization Sharing** — Share resources between participating organizations
-- **Impact Analytics** — Measure environmental and financial impact
-- **RAG Knowledge Layer** — Query organizational policies and documents
+**ResourceLoop AI** is an AI-powered circular resource intelligence platform that helps organizations **discover, match, reuse, redistribute, and analyze existing resources** before purchasing new ones or sending usable items to waste.
 
-## Core Philosophy
+### Key Features
 
+- 📦 **Resource Inventory** — Manage and track organizational resources.
+- 🤖 **AI Resource Matching** — Convert natural-language requirements into structured specifications and find suitable existing resources.
+- 🔍 **Underutilization Analysis** — Identify resources that are available but not being fully utilized.
+- ♻️ **Circularity Engine** — Analyze unwanted or damaged resources and recommend actions such as **Repair → Reuse → Redistribute → Recycle**.
+- 🏢 **Cross-Department Matching** — Discover resources available in other departments or organizational units.
+- 🌐 **Cross-Organization Sharing** — Support resource discovery across participating organizations.
+- 📊 **Impact Analytics** — Estimate environmental, financial, and circularity impact.
+- 📄 **CSV / Excel Import** — Upload existing inventory data instead of entering resources manually.
+- 🧠 **RAG-Based Policy Assistant** — Ask natural-language questions about organizational policies, guidelines, SOPs, and uploaded documents.
+- 🔎 **Source-Grounded Answers** — RAG answers are generated from retrieved organizational documents with source references.
+- 👥 **Organization-Based Access** — Keep organizational resources and knowledge separated through access control.
+- 💡 **Explainable Recommendations** — Matching and AI recommendations provide reasoning rather than only returning a result.
+
+### Core Idea
+
+```text
+              EXISTING RESOURCES
+                     ↓
+        ┌─────────────────────────┐
+        │     ResourceLoop AI     │
+        └─────────────────────────┘
+             ↓       ↓       ↓
+          MATCH    REUSE   REDISTRIBUTE
+             ↓       ↓       ↓
+        LESS PURCHASE • LESS WASTE • MORE UTILIZATION
 ```
-"Don't ask 'What should we buy?' first. 
- Ask 'What already exists that can solve the problem?'"
+
+**Aligned with UN SDG 12 — Responsible Consumption and Production**
+
+---
+
+## 🔗 Demo & Project Links
+
+| Resource | Link |
+|---|---|
+| 🌐 **Live Deployed Application** | **(https://resource-loop-ai.onrender.com/)** |
+| 🎥 **Demo Video** | **(https://youtu.be/Taap_ONBiNQ)** |
+| 📊 **Project PPT** | **https://docs.google.com/presentation/d/1hk2MRdR6G089XFJbzdI9umgOiQjtdINM/edit?usp=drive_link&ouid=118124366965706991424&rtpof=true&sd=true** |
+
+> **Start here:** Open the live application to explore the complete ResourceLoop AI workflow.
+
+---
+
+## 🎯 Problem
+
+Organizations often have resources that are:
+
+- unused or underutilized
+- stored in another department
+- suitable for reuse after minor repair
+- available elsewhere within the organization
+- discarded even though they still have useful value
+
+At the same time, departments frequently purchase new resources to satisfy requirements that could potentially be fulfilled by existing inventory.
+
+**ResourceLoop AI connects these two sides.**
+
+---
+
+## 💡 How It Works
+
+```text
+Resource Inventory
+       ↓
+Natural-Language Requirement
+       ↓
+AI Requirement Parsing
+       ↓
+Resource Matching
+       ↓
+Ranked Compatible Resources
+       ↓
+Circularity / Impact Analysis
+       ↓
+Reuse • Repair • Redistribute • Recycle
 ```
 
-```
-"Don't ask 'How do we dispose of it?' first. 
- Ask 'What is its best next life?'"
+For organizational knowledge:
+
+```text
+Policies / SOPs / Documents
+          ↓
+      Document Chunking
+          ↓
+       Retrieval
+          ↓
+     Relevant Context
+          ↓
+      LLM via RAG
+          ↓
+   Answer + Sources
 ```
 
-## Aligned with UN SDG 12 — Responsible Consumption and Production
+---
 
-## Quick Start
+## 🧪 Demo Flow
+
+### 1. Resource Dashboard
+View available resources, utilization information, opportunities, and impact metrics.
+
+### 2. Find a Resource
+
+Example:
+
+> "We need 10 computers for an AI lab with at least 16GB RAM, 512GB SSD and dedicated graphics."
+
+### 3. AI Requirement Parsing
+
+The system extracts structured requirements such as:
+
+```text
+Quantity: 10
+RAM: ≥ 16 GB
+Storage: ≥ 512 GB SSD
+GPU: Dedicated
+Use Case: AI Lab
+```
+
+### 4. AI Resource Matching
+
+The matching engine searches existing resources and returns compatible options with matching details and explanations.
+
+### 5. Circularity Analysis
+
+A resource can be analyzed to determine its possible next life.
+
+Example:
+
+```text
+Damaged Chair
+     ↓
+Repair Possible
+     ↓
+Reuse
+```
+
+Other possible outcomes include redistribution or recycling depending on the resource condition.
+
+### 6. Impact Analysis
+
+View the potential environmental and financial value created through reuse and redistribution.
+
+### 7. RAG Policy Assistant
+
+Upload organizational documents and ask questions such as:
+
+> "Who approves the transfer of unused computers?"
+
+The system retrieves relevant document sections and generates a grounded answer with source references.
+
+---
+
+## 🧠 AI & Intelligence
+
+### AI Resource Matching
+
+Natural-language requirements are converted into structured specifications and compared against available inventory.
+
+The matching system considers relevant attributes such as:
+
+- resource type
+- specifications
+- quantity
+- availability
+- condition
+- department / organization
+- requirement constraints
+
+### RAG-Based Knowledge Assistant
+
+ResourceLoop AI uses a Retrieval-Augmented Generation pipeline:
+
+**Documents → Chunking → TF-IDF Retrieval → Relevant Context → LLM → Answer + Sources**
+
+The system:
+
+- retrieves relevant document chunks
+- sends the retrieved context to the LLM
+- answers using the organization's documents
+- provides source references
+- avoids inventing information when the knowledge base does not contain the answer
+
+---
+
+## 📊 Impact
+
+ResourceLoop AI is designed to help organizations:
+
+- reduce unnecessary purchases
+- increase utilization of existing resources
+- extend resource lifecycles
+- reduce avoidable waste
+- enable cross-department resource sharing
+- quantify environmental and financial benefits
+
+### Circularity Model
+
+```text
+          ┌───────────┐
+          │   USE     │
+          └─────┬─────┘
+                ↓
+          ┌───────────┐
+          │   REUSE   │
+          └─────┬─────┘
+                ↓
+          ┌───────────┐
+          │  REPAIR   │
+          └─────┬─────┘
+                ↓
+       ┌──────────────────┐
+       │ REDISTRIBUTE /   │
+       │    RECYCLE       │
+       └──────────────────┘
+```
+
+---
+
+## 🏢 Scalability
+
+### Level 1 — Organization
+Resource discovery within a single organization.
+
+### Level 2 — Locality
+Multiple organizations can participate in a shared resource network.
+
+### Level 3 — City
+Future expansion toward city-scale circular resource infrastructure.
+
+---
+
+## 🛠️ Technology Stack
+
+- **Backend:** Python, FastAPI, SQLAlchemy
+- **Database:** PostgreSQL / SQLite
+- **Frontend:** HTML, CSS, JavaScript
+- **AI / LLM:** OpenRouter
+- **RAG:** TF-IDF + cosine similarity + LLM generation
+- **Data Import:** CSV, Excel
+- **Documents:** Organizational policies, SOPs, guidelines and other uploaded files
+- **API:** REST APIs with FastAPI
+
+---
+
+## 📁 Project Structure
+
+```text
+resource-loop-ai/
+│
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── database/
+│   │   ├── models/
+│   │   ├── schemas/
+│   │   ├── routes/
+│   │   └── services/
+│   │
+│   ├── static/
+│   │   ├── index.html
+│   │   └── js/
+│   │
+│   ├── uploads/
+│   ├── seed_data.py
+│   ├── requirements.txt
+│   └── .env.example
+│
+└── README.md
+```
+
+---
+
+## 🔌 Key API Endpoints
+
+### Resources
+- `GET /api/resources`
+- `POST /api/resources`
+- `GET /api/resources/{id}`
+- `PUT /api/resources/{id}`
+- `DELETE /api/resources/{id}`
+
+### Matching
+- `POST /api/matching/parse`
+- `POST /api/matching/search`
+
+### Circularity
+- `POST /api/circularity/analyze`
+
+### Import
+- `POST /api/upload/import/preview`
+- `POST /api/upload/import/confirm`
+
+### Documents & RAG
+- `GET /api/documents`
+- `POST /api/documents/upload`
+- `POST /api/documents/query`
+
+### Dashboard & Impact
+- `GET /api/dashboard`
+- `GET /api/impact`
+
+---
+
+## 🔐 Responsible AI
+
+ResourceLoop AI follows a human-in-the-loop approach:
+
+- AI recommendations can be verified by users.
+- Matching results provide explanations.
+- RAG answers are grounded in uploaded organizational documents.
+- The system does not intentionally fabricate missing policy information.
+- Organization-level access controls help separate data.
+- AI is used to assist decisions, not replace organizational authorization.
+
+---
+
+## 🚀 Local Setup
 
 ### Prerequisites
 
 - Python 3.9+
 - PostgreSQL
 
-### Setup
+### Installation
 
 ```bash
-# 1. Create PostgreSQL database
-createdb resourceloop
+git clone <repository-url>
+cd resource-loop-ai/backend
 
-# 2. Navigate to backend
-cd backend
-
-# 3. Create virtual environment
 python -m venv venv
-source venv/bin/activate  # Linux/Mac
-# or: venv\Scripts\activate  # Windows
 
-# 4. Install dependencies
+# Windows
+venv\Scripts\activate
+
+# Linux / Mac
+source venv/bin/activate
+
 pip install -r requirements.txt
+```
 
-# 5. Configure environment
-cp .env.example .env
-# Edit .env with your database credentials
+Configure your `.env` file with the required database, security, and AI configuration.
 
-# 6. Seed database with demo data
-python seed_data.py
+Start the backend:
 
-# 7. Start the server
+```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### Access
+### Local Access
 
-- **Frontend**: http://localhost:8000
-- **API Documentation**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/api/health
+```text
+Application:
+http://localhost:8000
 
-## Demo Accounts
+API Documentation:
+http://localhost:8000/docs
 
-| Username | Password | Role | Organization |
-|----------|----------|------|-------------|
-| admin | admin123 | Admin | ITER |
-| ana | ana123 | Manager | ITER (CS Dept) |
-| carlos | carlos123 | Manager | ITER (Electronics) |
-| maria | maria123 | User | ITER (Admin) |
-
-## Demo Flow
-
-1. **Dashboard** — View resource overview, opportunities, and impact
-2. **Find a Resource** — Enter "We need 10 computers for an AI lab with at least 16GB RAM, 512GB SSD and dedicated graphics"
-3. **AI parses requirements** — Shows structured requirements
-4. **Matching engine** — Finds compatible resources across departments
-5. **View matches** — See ranked results with explanations
-6. **Circularity** — Describe a damaged chair → Get AI recommendation (Repair → Reuse)
-7. **Impact** — View environmental and financial impact metrics
-
-## Architecture
-
-```
-resource-loop-ai/
-├── backend/
-│   ├── app/
-│   │   ├── main.py              # FastAPI application
-│   │   ├── database/             # Database connection
-│   │   ├── models/               # SQLAlchemy models
-│   │   ├── schemas/              # Pydantic schemas
-│   │   ├── routes/               # API endpoints
-│   │   ├── services/             # Business logic
-│   │   └── ai/                   # AI services (stub interfaces)
-│   ├── static/                   # Frontend SPA
-│   │   ├── index.html
-│   │   └── js/app.js
-│   ├── uploads/                  # Uploaded files
-│   ├── seed_data.py              # Demo data seeder
-│   ├── requirements.txt
-│   └── .env.example
-└── README.md
+Health Check:
+http://localhost:8000/api/health
 ```
 
-## API Endpoints
+---
 
-### Resources
-- `GET /api/resources` — List resources (filterable, paginated)
-- `POST /api/resources` — Create resource
-- `GET /api/resources/{id}` — Get resource details
-- `PUT /api/resources/{id}` — Update resource
-- `DELETE /api/resources/{id}` — Soft-delete resource
+## 👤 Demo Accounts
 
-### Matching
-- `POST /api/matching/parse` — Parse natural language requirements
-- `POST /api/matching/search` — Parse + search for matching resources
+| Username | Password | Role |
+|---|---|---|
+| admin | admin123 | Admin |
+| ana | ana123 | Manager |
+| carlos | carlos123 | Manager |
+| maria | maria123 | User |
 
-### Circularity
-- `POST /api/circularity/analyze` — Analyze resource and get recommendations
+> Demo credentials are intended only for local/demo environments.
 
-### Import
-- `POST /api/upload/import/preview` — Preview CSV/Excel import
-- `POST /api/upload/import/confirm` — Confirm and commit import
+---
 
-### Documents
-- `GET /api/documents` — List documents
-- `POST /api/documents/upload` — Upload document
-- `POST /api/documents/query` — Query knowledge base (RAG)
+## 🌱 Vision
 
-### Organizations
-- `GET /api/organizations` — List organizations
-- `GET /api/organizations/network/overview` — Network view
+ResourceLoop AI aims to move organizations from a **linear resource model**
 
-### Dashboard & Impact
-- `GET /api/dashboard` — Dashboard statistics
-- `GET /api/impact` — Impact analytics
+```text
+BUY → USE → DISCARD
+```
 
-## Scalability Model
+toward a **circular model**
 
-### Level 1 — Organization (Implemented)
-Resources within a single organization.
+```text
+DISCOVER → MATCH → REUSE → REPAIR → REDISTRIBUTE → RECYCLE
+```
 
-### Level 2 — Locality (Implemented)
-Multiple organizations sharing resources in a network.
+**The goal is simple: maximize the value of resources that already exist.**
 
-### Level 3 — City (Coming Soon)
-City-wide resource sharing infrastructure.
+---
 
-## AI Components
-
-| Component | Current Implementation | Production Ready |
-|-----------|----------------------|------------------|
-| NLP / Requirement Parsing | Keyword-based | → LLM (GPT-4) |
-| Resource Matching | Deterministic scoring | + Semantic embeddings |
-| Circularity Analysis | Rule-based | + Computer vision |
-| RAG / Document Q&A | Keyword search | + Vector DB + LLM |
-| Underutilization Detection | Threshold-based | + ML prediction |
-
-All AI service interfaces are designed for easy replacement with real models.
-
-## Responsible AI Principles
-
-- ✅ Human verification for AI-generated inventory
-- ✅ Explainability for every recommendation
-- ✅ Confidence/uncertainty display
-- ✅ No fabricated information
-- ✅ Data privacy between organizations
-- ✅ Access control per organization
-
-## Technologies
-
-- **Backend**: Python, FastAPI, SQLAlchemy, PostgreSQL
-- **Frontend**: HTML/CSS/JS, Tailwind CSS
-- **AI**: Pluggable interfaces (ready for OpenAI, embeddings, vision)
-- **Import**: openpyxl (Excel), csv (CSV)
-
-## License
+## 📄 License
 
 MIT
